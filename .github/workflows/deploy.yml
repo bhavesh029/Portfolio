@@ -33,6 +33,7 @@ jobs:
           VITE_EMAILJS_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_TEMPLATE_ID }}
           VITE_EMAILJS_PUBLIC_KEY: ${{ secrets.VITE_EMAILJS_PUBLIC_KEY }}
           VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID: ${{ secrets.VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID }}
+          VITE_GOOGLE_ANALYTICS_ID: ${{ secrets.VITE_GOOGLE_ANALYTICS_ID }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
