@@ -7,7 +7,7 @@ import Hero from "./components/Hero";
 import Services from "./components/Services";
 import CaseStudies from "./components/CaseStudies";
 import TechStack from "./components/TechStack";
-import About from "./components/about";
+import About from "./components/About";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 
