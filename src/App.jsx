@@ -4,15 +4,15 @@ import { Helmet } from "react-helmet-async";
 
 import Navbar from "./components/Navbar";
 import Hero from "./components/Hero";
-import Services from "./components/Services";
-import CaseStudies from "./components/CaseStudies";
-import TechStack from "./components/TechStack";
 import About from "./components/About";
+import Experience from "./components/Experience";
+import Projects from "./components/Projects";
+import Skills from "./components/Skills";
+import Services from "./components/Services";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 
 const App = () => {
-  // Initialize Google Analytics
   useEffect(() => {
     if (import.meta.env.VITE_GOOGLE_ANALYTICS_ID) {
       ReactGA.initialize(import.meta.env.VITE_GOOGLE_ANALYTICS_ID);
@@ -21,63 +21,31 @@ const App = () => {
   }, []);
 
   return (
-    <div className="relative z-0 bg-white">
-      {/* SEO Configuration */}
+    <div className="relative bg-space-900 overflow-hidden">
       <Helmet>
-        <title>Bhavesh Chauhan | Full-Stack Cloud Engineer</title>
+        <title>Bhavesh Chauhan | Senior Software Engineer</title>
         <meta
           name="description"
-          content="Freelance Software Engineer specializing in scalable Backend (Node.js/NestJS), AWS Cloud Architecture, and AI-Powered Automations."
+          content="Senior Software Engineer with 4+ years building cloud-native microservices, event-driven systems, and scalable APIs on AWS."
         />
         <meta
           name="keywords"
-          content="Bhavesh Chauhan, Backend Developer, Freelancer, Node.js, AWS, React, AI Automation"
+          content="Bhavesh Chauhan, Senior Software Engineer, Backend Developer, Node.js, NestJS, AWS, Microservices, Kafka, React, AI"
         />
         <meta name="author" content="Bhavesh Chauhan" />
-
-        {/* Open Graph / Facebook / LinkedIn */}
-        <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://bhaveshchauhan.me/" />
-        <meta
-          property="og:title"
-          content="Bhavesh Chauhan - Full-Stack Cloud Engineer"
-        />
-        <meta
-          property="og:description"
-          content="Building scalable backend systems and AI automations for forward-thinking businesses."
-        />
-        {/* Note: Ensure this image path works in production or use a full URL */}
-        <meta
-          property="og:image"
-          content="https://bhaveshchauhan.me/assets/images/your-photo.jpg"
-        />
-
-        {/* Twitter */}
-        <meta property="twitter:card" content="summary_large_image" />
-        <meta property="twitter:url" content="https://bhaveshchauhan.me/" />
-        <meta
-          property="twitter:title"
-          content="Bhavesh Chauhan - Full-Stack Cloud Engineer"
-        />
-        <meta
-          property="twitter:description"
-          content="Building scalable backend systems and AI automations for forward-thinking businesses."
-        />
-        <meta
-          property="twitter:image"
-          content="https://bhaveshchauhan.me/assets/images/your-photo.jpg"
-        />
       </Helmet>
+
+      {/* Background grid pattern */}
+      <div className="fixed inset-0 bg-grid-pattern bg-grid opacity-100 pointer-events-none z-0" />
 
       <Navbar />
       <Hero />
-      <Services />
-      <CaseStudies />
-      <TechStack />
       <About />
-      <div className="relative z-0">
-        <Contact />
-      </div>
+      <Experience />
+      <Projects />
+      <Skills />
+      <Services />
+      <Contact />
       <Footer />
     </div>
   );
