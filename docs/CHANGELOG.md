@@ -2,6 +2,14 @@
 
 Notable, user-visible or structural changes. Newest first. Agents: add an entry for every change you make (date, short summary, files/areas touched).
 
+## 2026-10-30: Installable PWA + mobile polish (branch `feature/pwa`)
+- Site is now an installable Progressive Web App (`vite-plugin-pwa`): generated manifest with 192/512/maskable icons and "Hire me"/"Resume" shortcuts, and a Workbox service worker that precaches the whole site (incl. 3D hero and resume) for offline use, with auto-update.
+- Install UI via `src/hooks/useInstallPrompt.js`: "Install app" button in the desktop navbar, an install icon and button on mobile (Chrome/Edge/Android), and an iOS "Add to Home Screen" hint in the mobile menu. GA4 events `pwa_install_prompt`, `pwa_installed`.
+- iOS standalone meta tags, `viewport-fit=cover`, safe-area padding for navbar, menu, toast, footer and body sides.
+- Mobile pass at 390 px: no horizontal overflow, tap targets ≥ 44 px (contact/footer/project/nav links), form fields 16 px, hero uses `min-h-svh`, mobile menu fits short phones, full-width toast on phones.
+- Contact form shows an "offline, email me" message when there's no connection.
+- Removed `public/site.webmanifest` (manifest is generated now). Icon sources: `scripts/app-icon.html`, `scripts/render-app-icons.sh`.
+
 ## 2026-10-30: Bug fixes + freelance visibility (branch `fix/bugs-and-seo`)
 **Bugs fixed**
 - Mobile menu no longer clipped to the navbar after scrolling (overlay moved outside the blurred `<nav>`). Added Escape-to-close, scroll lock, `inert` when closed, and a skip-to-content link.

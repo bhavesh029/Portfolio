@@ -63,7 +63,7 @@ const Projects = () => {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackOutboundClick("github_profile", githubUrl)}
-            className="text-electric font-semibold hover:text-electric-300 flex items-center gap-1 group transition-colors"
+            className="text-electric font-semibold hover:text-electric-300 flex items-center gap-1 min-h-[44px] group transition-colors"
           >
             View GitHub
             <svg
@@ -140,7 +140,7 @@ const Projects = () => {
                         target="_blank"
                         rel="noopener noreferrer"
                         onClick={() => trackOutboundClick(`project_${project.id}`, project.link)}
-                        className="text-electric text-sm font-medium hover:text-electric-300 flex items-center gap-1 group transition-colors"
+                        className="text-electric text-sm font-medium hover:text-electric-300 inline-flex items-center gap-1 min-h-[44px] group transition-colors"
                         aria-label={`View ${project.title} on GitHub`}
                       >
                         View Project
