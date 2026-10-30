@@ -1,11 +1,19 @@
 import { useState, useEffect } from "react";
 import { navLinks, personalInfo } from "../constants";
 import { trackResumeDownload } from "../utils/analytics";
+import { useInstallPrompt } from "../hooks/useInstallPrompt";
+
+const installIcon = (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+  </svg>
+);
 
 const Navbar = () => {
   const [active, setActive] = useState("");
   const [toggle, setToggle] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const { canInstall, showIOSHint, promptInstall } = useInstallPrompt();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -66,17 +74,21 @@ const Navbar = () => {
       </a>
 
       <nav
-        className={`fixed top-0 w-full z-50 transition-all duration-500 ${
+        className={`fixed top-0 w-full z-50 pt-[env(safe-area-inset-top)] transition-all duration-500 ${
           scrolled
-            ? "bg-space-900/80 backdrop-blur-xl border-b border-glass-border py-3"
-            : "bg-transparent py-5"
+            ? "bg-space-900/80 backdrop-blur-xl border-b border-glass-border"
+            : "bg-transparent"
         }`}
       >
-        <div className="max-w-7xl mx-auto px-6 lg:px-8 flex justify-between items-center">
+        <div
+          className={`max-w-7xl mx-auto px-6 lg:px-8 flex justify-between items-center transition-all duration-500 ${
+            scrolled ? "py-3" : "py-5"
+          }`}
+        >
           {/* Logo */}
           <a
             href="#home"
-            className="flex items-center gap-1 group"
+            className="flex items-center gap-1 min-h-[44px] group"
             aria-label={`${personalInfo.name}, back to top`}
           >
             <span className="font-display text-2xl font-bold text-white tracking-tight group-hover:text-electric transition-colors duration-300">
@@ -113,20 +125,40 @@ const Navbar = () => {
             >
               Resume
             </a>
+            {canInstall && (
+              <button
+                onClick={promptInstall}
+                className="flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                {installIcon}
+                Install app
+              </button>
+            )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden text-gray-400 hover:text-white p-2 transition-colors"
-            onClick={() => setToggle(!toggle)}
-            aria-label={toggle ? "Close menu" : "Open menu"}
-            aria-expanded={toggle}
-            aria-controls="mobile-menu"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
+          {/* Mobile: install shortcut + menu button */}
+          <div className="md:hidden flex items-center gap-1">
+            {canInstall && (
+              <button
+                onClick={promptInstall}
+                className="text-gray-400 hover:text-white p-3 transition-colors"
+                aria-label="Install app"
+              >
+                {installIcon}
+              </button>
+            )}
+            <button
+              className="text-gray-400 hover:text-white p-2 transition-colors"
+              onClick={() => setToggle(!toggle)}
+              aria-label={toggle ? "Close menu" : "Open menu"}
+              aria-expanded={toggle}
+              aria-controls="mobile-menu"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+          </div>
         </div>
       </nav>
 
@@ -139,12 +171,12 @@ const Navbar = () => {
         aria-label="Site navigation"
         aria-hidden={!toggle}
         inert={!toggle}
-        className={`md:hidden fixed inset-0 z-[60] bg-space-900/95 backdrop-blur-xl transition-all duration-500 flex flex-col items-center justify-center gap-8 ${
+        className={`md:hidden fixed inset-0 z-[60] bg-space-900/95 backdrop-blur-xl transition-all duration-500 flex flex-col items-center justify-center gap-5 overflow-y-auto py-20 ${
           toggle ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
       >
         <button
-          className="absolute top-5 right-6 text-gray-400 hover:text-white p-2"
+          className="absolute top-[calc(env(safe-area-inset-top)+1.25rem)] right-6 text-gray-400 hover:text-white p-2"
           onClick={() => setToggle(false)}
           aria-label="Close menu"
         >
@@ -157,7 +189,7 @@ const Navbar = () => {
           <a
             key={link.id}
             href={`#${link.id}`}
-            className={`text-2xl font-display font-bold transition-all duration-300 ${
+            className={`text-2xl font-display font-bold py-1.5 px-4 transition-all duration-300 ${
               active === link.id ? "text-electric" : "text-gray-300 hover:text-white"
             }`}
             style={{ transitionDelay: `${index * 50}ms` }}
@@ -179,6 +211,27 @@ const Navbar = () => {
         >
           Download Resume
         </a>
+
+        {canInstall && (
+          <button
+            onClick={() => {
+              setToggle(false);
+              promptInstall();
+            }}
+            className="btn-outline flex items-center gap-2"
+          >
+            {installIcon}
+            Install as app
+          </button>
+        )}
+
+        {showIOSHint && (
+          <p className="max-w-[16rem] text-center text-sm text-gray-400">
+            Install this site as an app: tap{" "}
+            <span className="text-white font-semibold">Share</span>, then{" "}
+            <span className="text-white font-semibold">Add to Home Screen</span>.
+          </p>
+        )}
       </div>
     </>
   );

@@ -55,7 +55,7 @@ const Hero = () => {
   return (
     <section
       ref={heroRef}
-      className="relative min-h-screen flex items-center overflow-hidden"
+      className="relative min-h-svh flex items-center overflow-hidden pt-24 pb-24"
       id="home"
     >
       {/* 3D Canvas Background */}

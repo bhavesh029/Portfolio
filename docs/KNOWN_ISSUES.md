@@ -25,6 +25,12 @@ Last audited **2026-10-30** on branch `fix/bugs-and-seo`. `npm run lint` and `np
 - No dedicated pages per project/case study or blog, which limits long-tail search traffic.
 - No testimonials/client logos section (strong social proof for freelance clients).
 
+### PWA
+- iOS Safari has no install prompt API, so iPhone users only see a text hint in the mobile menu. Installs there will be rare.
+- After a deploy, a returning visitor sees the previous version for one more load before auto-update kicks in. There's no "New version available, reload" toast.
+- The manifest has no `screenshots`, so Android/desktop Chrome shows the basic install dialog instead of the richer app-store-style one. Adding 1–2 phone-size screenshots would enable it.
+- Precache is about 1.7 MB (mostly the 3D chunk). It downloads in the background after the first visit, which costs data on mobile.
+
 ### Contact / lead capture
 - Spam protection is a honeypot only. Add EmailJS domain allow-listing / rate limits in the EmailJS dashboard, or a captcha if spam appears.
 - No budget/timeline fields, and no calendar booking link (e.g. Cal.com) for clients who prefer a call.

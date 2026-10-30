@@ -1,6 +1,6 @@
 # CLAUDE.md: Agent guide for this repository
 
-You are working on **Bhavesh Chauhan's personal portfolio** (https://bhaveshchauhan.me), a single-page React 19 + Vite 7 site with a Three.js hero, GSAP scroll animations and Tailwind styling. It is a static site: there is no backend, no router, no database and no tests.
+You are working on **Bhavesh Chauhan's personal portfolio** (https://bhaveshchauhan.me), a single-page React 19 + Vite 7 site with a Three.js hero, GSAP scroll animations and Tailwind styling. It is a static site and an installable, offline-capable **PWA** (`vite-plugin-pwa`). There is no backend, no router, no database and no tests.
 
 Read this file fully before making changes. For deeper context see:
 - `README.md`: overview, setup, env vars, deployment
@@ -25,6 +25,8 @@ npm run dev                       # localhost:5173
 npm run lint                      # must pass before you finish
 npm run build                     # must pass before you finish
 bash scripts/render-social-card.sh   # regenerate public/social-preview.jpg after editing scripts/social-card.html
+bash scripts/render-app-icons.sh     # regenerate PWA/home-screen icons after editing scripts/app-icon.html
+npm run build && npm run preview     # the only way to test the service worker (disabled in dev)
 ```
 
 ## Ground rules
@@ -41,6 +43,8 @@ bash scripts/render-social-card.sh   # regenerate public/social-preview.jpg afte
 10. **Static assets** that need a stable URL (PDFs, OG images) go in `public/`; images imported by components go in `src/assets/`.
 11. **SEO meta lives only in `index.html`** (no Helmet). Positioning: Senior SWE **available for freelance & contract work**. Keep titles/descriptions in that voice.
 12. **Track conversions** with helpers in `src/utils/analytics.js` (`trackResumeDownload`, `trackOutboundClick`, `trackEvent`) for any new CTA.
+13. **PWA safety.** A bad service worker is sticky on visitors' devices. Don't change `navigateFallback`, cache strategies or `registerType` casually. Test with `build` + `preview`, and know the kill switch (`selfDestroying: true` in `vite.config.js`). New files in `public/` that visitors need offline must match `workbox.globPatterns`.
+14. **Mobile-first checks.** Every UI change must work at 390 px width: no horizontal scroll, tap targets ≥ 44 px, form text ≥ 16 px, fixed elements respect `env(safe-area-inset-*)`. Use `min-h-svh`, not `min-h-screen`.
 
 ## Keep the docs in sync (required)
 

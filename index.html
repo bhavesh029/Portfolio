@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 
     <!-- Primary meta. Structured data (JSON-LD) and a <noscript> copy of the page are
          generated from src/constants/index.js by vite-plugins/seo.js at build time. -->
@@ -43,7 +43,14 @@
     <!-- Icons -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-    <link rel="manifest" href="/site.webmanifest" />
+    <!-- Web app manifest + service worker are injected by vite-plugin-pwa (see vite.config.js) -->
+
+    <!-- Installed-app behaviour (iOS reads these instead of the manifest) -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Bhavesh C." />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
     <link rel="alternate" type="text/plain" href="/llms.txt" title="LLM-readable profile" />
   </head>
   <body>
