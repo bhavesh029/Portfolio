@@ -2,12 +2,19 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [ main ] # Ensure this matches your branch name (main or master)
+    branches: [ main ]
+  # Lint + build every PR so a broken build is caught before it reaches main
+  pull_request:
+    branches: [ main ]
 
 permissions:
   contents: read
   pages: write
   id-token: write
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -23,7 +30,10 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install --legacy-peer-deps
+        run: npm ci --legacy-peer-deps
+
+      - name: Lint
+        run: npm run lint
 
       - name: Build
         run: npm run build
@@ -36,11 +46,13 @@ jobs:
           VITE_GOOGLE_ANALYTICS_ID: ${{ secrets.VITE_GOOGLE_ANALYTICS_ID }}
 
       - name: Upload artifact
+        if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
 
   deploy:
+    if: github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
