@@ -1,13 +1,22 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
+
+// Keep the glass-card colour transitions while overriding the transform timing
+const surfaceTransition = "background-color 0.3s, border-color 0.3s, box-shadow 0.3s";
+
+const glowColors = {
+  electric: "hover:shadow-glow-blue",
+  amber: "hover:shadow-glow-amber",
+};
 
 const GlassCard = ({ children, className = "", tiltEnabled = true, glowColor = "electric" }) => {
   const cardRef = useRef(null);
-  const [transform, setTransform] = useState("");
 
+  // Writes the style directly instead of via state so mousemove doesn't re-render the card
   const handleMouseMove = (e) => {
-    if (!tiltEnabled || !cardRef.current) return;
+    const card = cardRef.current;
+    if (!tiltEnabled || !card || e.pointerType === "touch") return;
 
-    const rect = cardRef.current.getBoundingClientRect();
+    const rect = card.getBoundingClientRect();
     const x = e.clientX - rect.left;
     const y = e.clientY - rect.top;
     const centerX = rect.width / 2;
@@ -16,28 +25,23 @@ const GlassCard = ({ children, className = "", tiltEnabled = true, glowColor = "
     const rotateX = ((y - centerY) / centerY) * -8;
     const rotateY = ((x - centerX) / centerX) * 8;
 
-    setTransform(`perspective(800px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`);
+    card.style.transition = `transform 0.1s ease-out, ${surfaceTransition}`;
+    card.style.transform = `perspective(800px) translateY(-4px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
   };
 
   const handleMouseLeave = () => {
-    setTransform("");
-  };
-
-  const glowColors = {
-    electric: "hover:shadow-glow-blue",
-    amber: "hover:shadow-glow-amber",
+    const card = cardRef.current;
+    if (!card) return;
+    card.style.transition = `transform 0.4s ease-out, ${surfaceTransition}`;
+    card.style.transform = "";
   };
 
   return (
     <div
       ref={cardRef}
       className={`glass-card p-6 md:p-8 ${glowColors[glowColor] || ""} ${className}`}
-      style={{
-        transform,
-        transition: transform ? "transform 0.1s ease-out" : "transform 0.4s ease-out",
-      }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
+      onPointerMove={handleMouseMove}
+      onPointerLeave={handleMouseLeave}
     >
       {children}
     </div>

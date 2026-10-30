@@ -7,12 +7,12 @@ Rendered in this order by `src/App.jsx`. Nav links come from `navLinks` in const
 | Order | Component | Anchor id | In navbar? | Content source |
 |---|---|---|---|---|
 | 1 | `Hero` | `home` | Logo scrolls here | `personalInfo` |
-| 2 | `About` | `about` | Yes | Hardcoded in `About.jsx` |
+| 2 | `About` | `about` | Yes | `aboutStats`, `personalInfo`; bio hardcoded in `About.jsx` |
 | 3 | `Experience` | `experience` | Yes | `experiences`, `education` |
 | 4 | `Projects` | `projects` | Yes | `projects` |
 | 5 | `Skills` | `skills` | Yes | `skillCategories` |
 | 6 | `Services` | `services` | Yes | `services` |
-| 7 | `Contact` | `contact` | Yes | `personalInfo`, `socialLinks` |
+| 7 | `Contact` | `contact` | Yes | `personalInfo`, `socialLinks`, `projectTypes` |
 | 8 | `Footer` | none | No | `socialLinks` |
 
 ## Data model: `src/constants/index.js`
@@ -20,25 +20,28 @@ Rendered in this order by `src/App.jsx`. Nav links come from `navLinks` in const
 | Export | Shape | Used by |
 |---|---|---|
 | `navLinks` | `[{ id, title }]`, `id` must equal the section's `id` attribute | `Navbar` |
-| `personalInfo` | `{ name, title, subtitle, tagline, email, location, resumeUrl, yearsOfExperience, companiesWorked, usersServed, teamSize }` | `Hero`, `Navbar`, `Contact` |
+| `personalInfo` | `{ name, title, subtitle, tagline, email, location, siteUrl, resumeUrl, yearsOfExperience, companiesWorked, usersServed, teamSize, availability }` | `Hero`, `Navbar`, `About`, `Contact`, SEO plugin |
+| `aboutStats` | `[{ value, label }]` (4 tiles) | `About` |
 | `socialLinks` | `[{ name, url, icon }]`, `icon` ∈ `github \| linkedin \| email` | `Contact`, `Footer` |
-| `experiences` | `[{ id, role, company, location, date, type, description, bullets[], tech[] }]`, newest first | `Experience` (shows only `bullets[0..2]`; `type` is not rendered) |
+| `experiences` | `[{ id, role, company, location, date, type, description, bullets[], tech[] }]`, newest first. A `date` containing "Present" marks the current job (used in JSON-LD `worksFor`) | `Experience`, SEO plugin (`type` is not rendered) |
 | `education` | `{ degree, university, period, achievement }` | `Experience` |
-| `projects` | `[{ id, title, subtitle, category, status, description, highlights[], tech[], link, color }]`, `color` ∈ `amber \| blue \| purple` | `Projects` |
+| `projects` | `[{ id, title, subtitle, category, status, description, highlights[], tech[], link, color }]`, `color` ∈ `amber \| blue \| purple`, `link` is a URL or `null` for private work | `Projects`, SEO plugin |
 | `skillCategories` | `[{ title, icon, skills[] }]`, `icon` ∈ `code \| cloud \| database \| cpu \| architecture \| tools` | `Skills` |
-| `services` | `[{ id, title, description, icon, tags[] }]`, `icon` ∈ `server \| code \| cpu` | `Services` |
+| `services` | `[{ id, title, description, icon, tags[] }]`, `icon` ∈ `server \| code \| cpu` | `Services`, SEO plugin (JSON-LD offers) |
+| `projectTypes` | `[{ value, label }]` | `Contact` select options |
 
-Fields that exist but aren't rendered anywhere: `personalInfo.name`, `personalInfo.email`, `personalInfo.location`, `experiences[].type`.
+Everything above (except `navLinks`, `aboutStats`, `projectTypes`) is also read by `vite-plugins/seo.js` to build JSON-LD, the `<noscript>` copy and `llms.txt`. Keep it accurate: it's what Google and AI assistants read. `experiences[].type` is not rendered anywhere.
 
 ## Common content edits
 
-- **New job:** add an object at the **top** of `experiences` (newest first) with a unique `id`. Put the 3 strongest bullets first, since only 3 are shown. Update `personalInfo.yearsOfExperience` / `companiesWorked` and the About bio in `About.jsx` if relevant.
-- **New project:** append to `projects`. Use a real repo/demo URL in `link`. The grid is 3 columns on desktop, so 3 or 6 cards look best.
+- **New job:** add an object at the **top** of `experiences` (newest first) with a unique `id`, strongest bullets first. Update `personalInfo.yearsOfExperience` / `companiesWorked` and the About bio in `About.jsx` if relevant.
+- **New project:** append to `projects`. Use a real repo/demo URL in `link`, or `null` for private/client work. The grid is 3 columns on desktop, so 3 or 6 cards look best.
 - **New skill:** add to the right `skillCategories[].skills`. New category: add an object, and if you use a new `icon` key, add its SVG to `categoryIcons` in `Skills.jsx`.
 - **New resume:** replace `public/Bhavesh_Chauhan_Resume_2026.pdf` (or add a new file and update `personalInfo.resumeUrl`). Also keep the stats/claims on the site consistent with it.
 - **New photo:** replace `src/assets/images/your-photo.jpg` (square crop, ideally ≤ 150 kB WebP/JPEG).
-- **Social preview:** replace `public/social-preview.jpg` (ideal 1200×630) and keep `index.html` OG/Twitter tags pointing to it.
-- **SEO text:** update **both** `index.html` meta tags and the `<Helmet>` block in `App.jsx`.
+- **Availability:** change `personalInfo.availability` (hero badge, JSON-LD, llms.txt) and the text in `scripts/social-card.html`.
+- **Social preview:** edit `scripts/social-card.html` and run `bash scripts/render-social-card.sh` to regenerate `public/social-preview.jpg` (1200×630).
+- **SEO text:** title/description/OG/Twitter tags live only in `index.html`. Structured data updates itself from constants.
 
 ## Adding a new section (checklist)
 

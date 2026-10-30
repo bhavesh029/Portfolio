@@ -15,11 +15,11 @@ It is a single-page React app with a 3D hero (Three.js via React Three Fiber), G
 | UI framework | React 19 (JavaScript/JSX, no TypeScript) |
 | Build tool / dev server | Vite 7 |
 | Styling | Tailwind CSS 3 + custom component classes in `src/index.css` |
-| 3D | `three`, `@react-three/fiber` 9, `@react-three/drei` 10 |
-| Animation | GSAP 3 + `ScrollTrigger` (Framer Motion is installed but **unused**) |
+| 3D | `three`, `@react-three/fiber` 9 (lazy-loaded) |
+| Animation | GSAP 3 + `ScrollTrigger` |
 | Contact form | `@emailjs/browser` (sends email straight from the browser, no backend) |
-| Analytics | `react-ga4` (Google Analytics 4) |
-| SEO head tags | `react-helmet-async` + static meta in `index.html` |
+| Analytics | `react-ga4` (Google Analytics 4) via `src/utils/analytics.js` |
+| SEO | Static meta in `index.html` + build-time plugin `vite-plugins/seo.js` (JSON-LD, noscript copy, sitemap, llms.txt) |
 | Hosting | GitHub Pages, custom domain via `public/CNAME` |
 
 ## Page sections (top to bottom)
@@ -34,7 +34,7 @@ It is a single-page React app with a 3D hero (Three.js via React Three Fiber), G
 8. **Contact** (`#contact`): EmailJS form + social links + resume download
 9. **Footer**: copyright, social links, back-to-top
 
-Almost all text content lives in **`src/constants/index.js`**. Edit that file to update experience, projects, skills, services, links or personal info.
+Almost all text content lives in **`src/constants/index.js`**. Edit that file to update experience, projects, skills, services, links or personal info. The same file feeds the SEO output (structured data, `<noscript>` copy, `llms.txt`), so search engines and AI assistants pick up changes automatically on the next build.
 
 ## Getting started
 
@@ -71,9 +71,16 @@ Locally they come from `.env` (gitignored). In CI they come from **GitHub reposi
 
 ## Deployment
 
-`.github/workflows/deploy.yml` runs on every push to **`main`**: `npm install --legacy-peer-deps` → `npm run build` (with secrets injected) → upload `dist/` → deploy to GitHub Pages. Anything in `public/` (resume PDF, favicon, social preview image, `CNAME`) is copied as-is to the site root.
+`.github/workflows/deploy.yml`:
+- **Pull requests to `main`:** `npm ci --legacy-peer-deps` → `npm run lint` → `npm run build` (checks only, no deploy).
+- **Push to `main`:** same steps, then upload `dist/` → deploy to GitHub Pages.
+
+Anything in `public/` (resume PDF, favicon, touch icon, social preview image, `robots.txt`, `site.webmanifest`, `CNAME`) is copied as-is to the site root. `sitemap.xml` and `llms.txt` are generated at build time.
 
 Feature branches are **not** deployed. Merge to `main` to publish.
+
+### Social preview image
+`public/social-preview.jpg` (1200×630) is rendered from `scripts/social-card.html`. After changing your title/photo, edit that HTML and run `bash scripts/render-social-card.sh` (needs Google Chrome, macOS).
 
 ## Project structure
 
@@ -84,27 +91,29 @@ Feature branches are **not** deployed. Merge to `main` to publish.
 ├── public/                        # Static files served at site root
 │   ├── Bhavesh_Chauhan_Resume_2026.pdf
 │   ├── CNAME                      # bhaveshchauhan.me
-│   ├── favicon.svg
-│   └── social-preview.jpg         # og:image / twitter:image
+│   ├── favicon.svg  apple-touch-icon.png  site.webmanifest  robots.txt
+│   └── social-preview.jpg         # og:image / twitter:image (1200×630)
+├── scripts/                       # social-card.html + render-social-card.sh
+├── vite-plugins/seo.js            # Build-time JSON-LD, <noscript> copy, sitemap.xml, llms.txt
 ├── src/
-│   ├── main.jsx                   # React root, HelmetProvider, GSAP plugin registration
-│   ├── App.jsx                    # Page composition, GA init, Helmet meta
+│   ├── main.jsx                   # React root, GSAP plugin registration
+│   ├── App.jsx                    # Page composition, GA init
+│   ├── utils/analytics.js         # GA4 init + event helpers (no-op without GA ID)
 │   ├── index.css                  # Tailwind layers + shared component classes
 │   ├── constants/index.js         # ALL site content (single source of truth)
 │   ├── assets/images/your-photo.jpg
 │   └── components/
 │       ├── Navbar.jsx  Hero.jsx  About.jsx  Experience.jsx  Projects.jsx
 │       ├── Skills.jsx  Services.jsx  Contact.jsx  Footer.jsx
-│       ├── canvas/                # React Three Fiber scene for the hero
+│       ├── canvas/                # React Three Fiber scene for the hero (lazy-loaded)
 │       │   ├── HeroCanvas.jsx  FloatingShape.jsx  ParticleField.jsx
 │       └── ui/                    # Reusable UI pieces
-│           ├── GlassCard.jsx  Toast.jsx  AnimatedText.jsx*  SectionWrapper.jsx*
-├── index.html                     # Static SEO/OG meta, fonts, favicon
+│           ├── GlassCard.jsx  Toast.jsx
+├── index.html                     # Static SEO/OG meta, fonts, icons
 ├── tailwind.config.js             # Design tokens (colors, fonts, shadows, animations)
-├── vite.config.js                 # manualChunks vendor splitting
+├── vite.config.js                 # SEO plugin, gsap vendor chunk
 └── eslint.config.js
 ```
-`*` = present but currently unused.
 
 ## Documentation
 

@@ -1,8 +1,7 @@
-import { useRef } from "react";
+import { useMemo, useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 
-// Generate positions outside the component to avoid impurity in render
 const generatePositions = (count) => {
   const pos = new Float32Array(count * 3);
   for (let i = 0; i < count; i++) {
@@ -13,11 +12,9 @@ const generatePositions = (count) => {
   return pos;
 };
 
-const DEFAULT_POSITIONS = generatePositions(200);
-
 const ParticleField = ({ count = 200 }) => {
   const pointsRef = useRef();
-  const positions = count === 200 ? DEFAULT_POSITIONS : generatePositions(count);
+  const positions = useMemo(() => generatePositions(count), [count]);
 
   useFrame((state) => {
     if (!pointsRef.current) return;
@@ -29,12 +26,7 @@ const ParticleField = ({ count = 200 }) => {
   return (
     <points ref={pointsRef}>
       <bufferGeometry>
-        <bufferAttribute
-          attach="attributes-position"
-          count={count}
-          array={positions}
-          itemSize={3}
-        />
+        <bufferAttribute attach="attributes-position" args={[positions, 3]} />
       </bufferGeometry>
       <pointsMaterial
         size={0.03}

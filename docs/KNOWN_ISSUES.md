@@ -1,70 +1,43 @@
 # Known Issues & Gaps
 
-Audit of the codebase as of **2026-10-30** (branch `feature/redesigned-3d-web`, commit `afaa046`). `npm run lint` passes and `npm run build` succeeds. These are behavioral, content and quality problems that the tooling doesn't catch.
+Last audited **2026-10-30** on branch `fix/bugs-and-seo`. `npm run lint` and `npm run build` pass. The items fixed in that branch are recorded in `CHANGELOG.md`. What's below is what is still open.
 
 **Agents:** when you fix an item, delete it. When you find a new one you aren't fixing, add it.
 
 ## Bugs
 
-### High
-1. **Mobile menu is clipped to the navbar after scrolling.** `Navbar.jsx`: once `scrollY > 50`, the `<nav>` gets `backdrop-blur-xl`. `backdrop-filter` makes the nav the containing block for `position: fixed` descendants, so the full-screen overlay (`fixed inset-0`, rendered *inside* `<nav>`) becomes only as large as the navbar bar. Opening the menu anywhere except the very top of the page looks broken. Fix: render the overlay as a sibling of `<nav>` (or via a portal), or move the blur onto a separate background element.
-2. **Timeline dots misaligned on tablet/desktop.** `Experience.jsx:78,130` uses `md:left-6.5`, which doesn't exist in Tailwind's default spacing scale. No CSS is generated (verified in the built CSS), so at ≥768 px the dots stay at `left-2.5` while the line moves to `left-8`. Fix: `md:left-[26px]`.
-3. **Experience bullets are silently truncated.** `Experience.jsx:102` renders `exp.bullets.slice(0, 3)`. HabileLabs has 5 bullets and the freelance and Newton roles have 4, so content in constants never appears (e.g. the codebase-ownership and pre-push-hooks wins). Either show all bullets, add a "show more", or trim the data.
-4. **Contact form reports failure when the message was actually sent.** `Contact.jsx:64-91`: if the main email succeeds but the optional auto-reply fails, the shared `.catch` shows "Something went wrong" and keeps the form filled, so visitors resubmit and Bhavesh gets duplicates. Handle the auto-reply failure separately.
-
-### Medium
-5. **Project links are placeholders.** `Akira` and `Student Transport System` link to the GitHub profile root (`https://github.com/bhavesh029`) while saying "View Project". Use real URLs, or hide/relabel the link when there isn't one.
-6. **Project content mixes up achievements.** "AI-Powered Spam Detection" lists "35% improvement in query performance with PostGIS", but that metric belongs to the Trigsy Technologies role. Check it against the resume.
-7. **Navbar active state is click-only.** No scroll-spy, so the highlighted link goes stale as soon as the user scrolls, and nothing is highlighted on load or after using the hero CTA.
-8. **Mobile menu accessibility.** No body scroll lock, no Escape-to-close, no focus trap. Focus can land on hidden links behind the overlay.
-9. **Two `<h1>` elements in the hero** ("BHAVESH" and "CHAUHAN" are separate `h1`s). Use one `h1` with two spans.
-10. **Title mismatch.** `index.html` title is "…Senior Software Engineer — Backend & Distributed Systems" but Helmet in `App.jsx` replaces it with a shorter one. Pick one.
-11. **`react-vendor` chunk is empty.** `vite.config.js` `manualChunks` produces an empty `react-vendor-*.js` (build warns "Generated an empty chunk"). React lands in `index-*.js`. Remove the entry or use a function-form `manualChunks`.
-12. **GlassCard hover lift is overridden.** `.glass-card:hover { transform: translateY(-4px) }` is overridden by GlassCard's inline tilt `transform`, so project cards lose the lift and only tilt. GlassCard also calls `setState` on every `mousemove`, re-rendering the card each frame. Use a ref + direct style write instead.
-
 ### Low
-13. `ParticleField` regenerates random positions on every render when `count !== 200` (the hero passes 150). Memoize with `useMemo`.
-14. Scene lights in `HeroCanvas` do nothing: every material is `meshBasicMaterial` / `pointsMaterial`.
-15. Twitter meta tags in `index.html` use `property="twitter:*"`. The spec is `name="twitter:*"` (most parsers tolerate it).
-16. `formRef` in `Contact.jsx` is created but never used. `gsap.registerPlugin(ScrollTrigger)` is repeated in 6 files (already done in `main.jsx`).
-17. About stats and bio, the Projects "View GitHub" URL and the Contact project-type options are hardcoded in components instead of `constants/index.js`.
+1. `gsap.registerPlugin(ScrollTrigger)` is repeated in each section file (already done in `main.jsx`). Harmless.
+2. About bio paragraphs are still hardcoded in `About.jsx` (stats were moved to `aboutStats` in constants).
+3. Footer social links don't fire `trackOutboundClick` like the Contact ones do.
+4. Twitter/X has no `twitter:site` / `twitter:creator` tag (no handle known).
 
 ## Things the site doesn't do (or does poorly)
 
 ### Performance
-- **Heavy first load:** `three-vendor` is ~1.08 MB minified / ~299 kB gzip, loaded eagerly before anything is interactive. Lazy-load `HeroCanvas` (`React.lazy` + `Suspense`) with a static gradient fallback.
-- **WebGL runs non-stop:** the canvas renders every frame even when scrolled off-screen or in a background tab. Use `frameloop="demand"` or pause via IntersectionObserver.
-- **No low-power / mobile fallback:** full 3D scene on every phone. No `prefers-reduced-motion` handling for the 3D scene or any GSAP animation.
-- **Unoptimized images:** `your-photo.jpg` (257 kB) has no `width`/`height`, `loading`, or modern format. `public/social-preview.jpg` is byte-for-byte the same photo at 1024×768 rather than a proper 1200×630 share card.
-- **Unused dependencies shipped/installed:** `framer-motion`, `@gsap/react`. Unused components: `ui/AnimatedText.jsx`, `ui/SectionWrapper.jsx`.
+- `src/assets/images/your-photo.jpg` is still a 257 kB JPEG. Export a ~600 px WebP/AVIF (it now has `loading="lazy"` and dimensions).
+- GSAP reveal animations ignore `prefers-reduced-motion` (the 3D hero already respects it). Wrap them in `gsap.matchMedia()`.
+- The lazy three.js chunk is ~880 kB / 238 kB gzip. Fine since it no longer blocks first paint, but a static image fallback on low-end phones would save data.
 
-### SEO
-- No `robots.txt`, `sitemap.xml`, `<link rel="canonical">`, or JSON-LD `Person` structured data.
-- Client-rendered only: crawlers that don't execute JS see an empty `<div id="root">`. Consider prerendering (e.g. `vite-plugin-prerender` / static export).
-- No `theme-color`, no Apple touch icon or PNG favicons (SVG favicon only).
+### SEO / visibility
+- No real prerendering. Content for non-JS crawlers comes from the generated `<noscript>` block, JSON-LD and `llms.txt` (see `vite-plugins/seo.js`). Full prerendering would be the next step if search rankings matter more.
+- **Owner actions (can't be done in code):** verify the domain in Google Search Console and Bing Webmaster Tools and submit `https://bhaveshchauhan.me/sitemap.xml`. In GA4, mark `generate_lead` and `resume_download` as key events. Re-scrape the link preview with the LinkedIn Post Inspector after deploying.
+- No dedicated pages per project/case study or blog, which limits long-tail search traffic.
+- No testimonials/client logos section (strong social proof for freelance clients).
 
 ### Contact / lead capture
-- No spam protection (honeypot, captcha, or EmailJS rate limiting).
-- No field-level validation feedback beyond native `required`, and no length limits.
-- If EmailJS env vars are missing (e.g. a CI secret not set) the form just shows a generic error. Nothing warns at build time.
+- Spam protection is a honeypot only. Add EmailJS domain allow-listing / rate limits in the EmailJS dashboard, or a captcha if spam appears.
+- No budget/timeline fields, and no calendar booking link (e.g. Cal.com) for clients who prefer a call.
 
-### Analytics
-- Only a single pageview is sent. No events for resume downloads, form submits, outbound GitHub/LinkedIn clicks or section views, which are the conversions the site exists for.
-- No cookie/consent banner (matters for EU/UK visitors with GA4).
+### Analytics & privacy
+- No cookie/consent banner for GA4 (matters for EU/UK visitors).
 
 ### Accessibility
-- Reveal animations start at `opacity: 0`. If GSAP/ScrollTrigger fails, sections stay invisible.
+- Reveal animations start at `opacity: 0`. If GSAP fails to load, sections stay invisible.
 - No custom `:focus-visible` styles, and several low-contrast texts (`text-gray-500` on `space-900`).
-- No skip-to-content link.
-
-### Content & UX
-- No dark/light toggle (dark only, by design).
-- No dedicated project detail pages, case studies, blog or testimonials.
-- No 404 handling (single page, so it only matters if routes are added).
 
 ### Engineering / repo hygiene
-- **No tests** (unit, visual, or e2e) and **no lint/build check on PRs**. CI only runs on push to `main`, so a broken build is discovered at deploy time.
-- CI uses `npm install --legacy-peer-deps` instead of `npm ci`, so lockfile drift is possible.
-- `Bhavesh_Chauhan_Resume_2026.pdf` is duplicated at the repo root and in `public/`. Only the `public/` copy is served.
-- `.env` was committed in early history (commit `8fa38c5`, removed in `65dfa73`). The values are EmailJS/GA identifiers that ship in the public bundle anyway, so the risk is low, but consider rotating the EmailJS keys and enabling EmailJS domain allow-listing.
+- No tests (unit, visual or e2e). CI now runs lint + build on PRs, but nothing checks behavior.
+- `.env` was committed in early history (commit `8fa38c5`, removed in `65dfa73`). The values are EmailJS/GA identifiers that ship in the public bundle anyway, but consider rotating the EmailJS keys.
 - Browserslist data is stale (`npx update-browserslist-db@latest`).
+- `npm install` reports audit advisories. Review with `npm audit`.

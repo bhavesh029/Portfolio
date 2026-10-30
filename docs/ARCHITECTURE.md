@@ -5,9 +5,10 @@ A static, client-rendered single-page app. Vite bundles React + JSX; GitHub Page
 ## Boot sequence
 
 ```
-index.html                     static <head>: title, description, OG/Twitter meta, fonts, favicon
-  └─ src/main.jsx              registers GSAP ScrollTrigger, mounts <App/> in StrictMode + HelmetProvider
-       └─ src/App.jsx          inits GA4 (if VITE_GOOGLE_ANALYTICS_ID), <Helmet> meta, renders sections in order
+index.html                     static <head>: title, description, canonical, OG/Twitter meta, fonts, icons
+                               (+ JSON-LD and <noscript> injected at build by vite-plugins/seo.js)
+  └─ src/main.jsx              registers GSAP ScrollTrigger, mounts <App/> in StrictMode
+       └─ src/App.jsx          initAnalytics(), renders Navbar, <main id="main"> sections, Footer
 ```
 
 `App.jsx` wraps everything in `div.relative.bg-space-900.overflow-hidden` and draws a fixed full-screen grid background (`bg-grid-pattern bg-grid`) behind all sections.
@@ -16,22 +17,21 @@ index.html                     static <head>: title, description, OG/Twitter met
 
 | File | Renders | Data source | Notes |
 |---|---|---|---|
-| `components/Navbar.jsx` | Fixed top nav, desktop links, mobile full-screen overlay | `navLinks`, `personalInfo.resumeUrl` | Becomes blurred/solid after `scrollY > 50`. "Active" link is set on click only (no scroll-spy). |
-| `components/Hero.jsx` (`#home`) | 3D canvas, badge, name, tagline, 2 CTAs, 4 stats | `personalInfo` | GSAP timeline on mount (not scroll-triggered). |
-| `components/canvas/HeroCanvas.jsx` | R3F `<Canvas>` with lights, `FloatingShape`, `ParticleField count={150}` | none | `dpr={[1, 1.5]}`, transparent background, absolutely positioned behind hero content. |
+| `components/Navbar.jsx` | Skip link, fixed top nav, desktop links, mobile full-screen overlay | `navLinks`, `personalInfo` | Blurred/solid after `scrollY > 50`. Scroll-spy via IntersectionObserver sets the active link. **The mobile overlay must stay outside `<nav>`**: the nav's `backdrop-filter` would make it the containing block and clip the fixed overlay. Escape closes; body scroll is locked while open. |
+| `components/Hero.jsx` (`#home`) | 3D canvas, availability badge, single `<h1>` name, title, tagline, 2 CTAs, 4 stats | `personalInfo` | GSAP timeline on mount. `HeroCanvas` is `React.lazy` so three.js never blocks first paint. |
+| `components/canvas/HeroCanvas.jsx` | R3F `<Canvas>` with `FloatingShape`, `ParticleField count={150}` | none | `frameloop` switches to `"demand"` when off-screen (IntersectionObserver) or under `prefers-reduced-motion`. |
 | `components/canvas/FloatingShape.jsx` | Wireframe icosahedron (blue + amber) + faint core sphere | none | `useFrame`: slow rotation, eased pointer-follow, vertical float, opacity pulse. |
 | `components/canvas/ParticleField.jsx` | Points cloud in a 20×20×20 cube, additive blending | none | Slowly rotates. |
-| `components/About.jsx` (`#about`) | Photo + "Open to Work" card, bio, 4 stat tiles | **hardcoded** (bio, stats) | Photo is `src/assets/images/your-photo.jpg`; falls back to ui-avatars.com on error. |
-| `components/Experience.jsx` (`#experience`) | Timeline line + job cards + education card | `experiences`, `education` | Line scales with scroll (`scrub`). **Only the first 3 bullets per job are shown.** |
-| `components/Projects.jsx` (`#projects`) | Grid of project cards | `projects` | Uses `GlassCard` (mouse tilt). `project.color` → `colorMap` (`amber`/`blue`/`purple`). |
+| `components/About.jsx` (`#about`) | Photo + availability card, bio, 4 stat tiles | `aboutStats`, `personalInfo`; bio is hardcoded | Photo is `src/assets/images/your-photo.jpg`; falls back to ui-avatars.com on error. |
+| `components/Experience.jsx` (`#experience`) | Timeline line + job cards + education card | `experiences`, `education` | Line scales with scroll (`scrub`). Dots are positioned with arbitrary values (`left-[9px] md:left-[25px]`) to centre on the line. |
+| `components/Projects.jsx` (`#projects`) | Grid of project cards | `projects`, `socialLinks` | Uses `GlassCard` (mouse tilt). `project.color` → `colorMap` (`amber`/`blue`/`purple`). `link: null` renders "Private codebase · details on request". |
 | `components/Skills.jsx` (`#skills`) | Category cards with skill pills | `skillCategories` | `category.icon` → `categoryIcons` map (`code`, `cloud`, `database`, `cpu`, `architecture`, `tools`). |
 | `components/Services.jsx` (`#services`) | 3 service cards (`glow-card`) | `services` | `service.icon` → `serviceIcons` map (`server`, `code`, `cpu`). |
-| `components/Contact.jsx` (`#contact`) | Form (name, email, project type, message), toast, social links, resume link | `personalInfo`, `socialLinks` | See "Contact form" below. Project-type `<option>`s are hardcoded. |
+| `components/Contact.jsx` (`#contact`) | Form (name, email, project type, message + hidden honeypot), toast, social links, resume link | `personalInfo`, `socialLinks`, `projectTypes` | See "Contact form" below. |
 | `components/Footer.jsx` | Logo, © year, social links, back-to-top | `socialLinks` | |
-| `components/ui/GlassCard.jsx` | `glass-card` div with 3D tilt on mousemove | props | Props: `className`, `tiltEnabled=true`, `glowColor="electric"\|"amber"`. |
+| `components/ui/GlassCard.jsx` | `glass-card` div with 3D tilt on pointer move | props | Props: `className`, `tiltEnabled=true`, `glowColor="electric"\|"amber"`. Writes `style.transform` via ref (no re-render per move). |
 | `components/ui/Toast.jsx` | Fixed top-right notification, auto-closes after 4 s | props | Props: `message`, `type="success"\|"error"`, `isVisible`, `onClose` (must be stable, e.g. `useCallback`). |
-| `components/ui/AnimatedText.jsx` | Per-character GSAP reveal heading | props | **Unused.** |
-| `components/ui/SectionWrapper.jsx` | Generic animated `<section>` wrapper | props | **Unused.** Sections duplicate this pattern inline instead. |
+| `utils/analytics.js` | n/a | env | `initAnalytics()`, `trackEvent()`, `trackResumeDownload(location)`, `trackOutboundClick(label, url)`. All no-op without `VITE_GOOGLE_ANALYTICS_ID`. |
 
 ## Data flow
 
@@ -60,14 +60,13 @@ useEffect(() => {
 - `gsap.context(…, sectionRef)` scopes selector strings to the section, so class names like `.exp-card` only need to be unique per section.
 - Each file also calls `gsap.registerPlugin(ScrollTrigger)`. That's redundant with `main.jsx` but harmless.
 - Elements start at `opacity: 0` via the `from` state, so if a ScrollTrigger never fires the content stays invisible. Keep `start` values reasonable.
-- `@gsap/react` (`useGSAP`) and `framer-motion` are installed but unused.
 
 ## 3D (React Three Fiber)
 
-- Single `<Canvas>` only in the hero. Camera at `z=7`, `fov 50`.
-- Materials are all `meshBasicMaterial`/`pointsMaterial`, so the lights in `HeroCanvas` have no visible effect (basic materials ignore lighting).
+- Single `<Canvas>` only in the hero, lazy-loaded. Camera at `z=7`, `fov 50`. No lights: all materials are unlit (`meshBasicMaterial`/`pointsMaterial`).
 - Pointer interaction uses `state.pointer` (normalized −1…1) inside `useFrame`.
-- The canvas keeps rendering every frame even when the hero is scrolled out of view.
+- Render loop pauses when the hero is off-screen and is static under `prefers-reduced-motion`.
+- Don't add three.js/R3F to `manualChunks` in `vite.config.js`: a manual chunk gets preloaded with the entry and defeats the lazy load.
 
 ## Styling
 
@@ -77,16 +76,23 @@ useEffect(() => {
 
 ## Contact form
 
-`Contact.jsx` → `emailjs.send(SERVICE_ID, TEMPLATE_ID, params, PUBLIC_KEY)` with params `{ name, email, project_type, message }`. If `VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID` is set, a second send goes to the visitor with `{ …params, to_name, to_email }`. Success/failure shows a `Toast`. EmailJS templates must use those exact variable names.
+`Contact.jsx` → `emailjs.send(SERVICE_ID, TEMPLATE_ID, params, PUBLIC_KEY)` with params `{ name, email, project_type, message }`. EmailJS templates must use those exact variable names.
+- If the hidden `website` honeypot is filled, it fakes success and sends nothing.
+- If EmailJS env vars are missing, it warns in the console and shows an error toast with the email address.
+- If `VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID` is set, a second send goes to the visitor with `{ …params, to_name, to_email }`. A failure here is only logged: the inquiry was already delivered, so the visitor still sees success.
+- On success it fires GA4 `generate_lead`.
 
 ## SEO & analytics
 
-- Static meta (title, description, keywords, OG, Twitter) in `index.html`. That's what crawlers and link unfurlers see, since they don't run JS.
-- `react-helmet-async` in `App.jsx` overrides `<title>`/description at runtime (with a slightly different, shorter title).
-- GA4: one `pageview` sent on mount. No event tracking (e.g. resume clicks, form submits).
+- Static meta (title, description, canonical, robots, OG, Twitter) lives **only** in `index.html`. There's no runtime head management.
+- `vite-plugins/seo.js` reads `src/constants/index.js` at build time and:
+  - injects JSON-LD (`WebSite`, `ProfilePage`, `Person`, `ProfessionalService` with an `OfferCatalog` of `services`) into `<head>`
+  - injects a `<noscript>` text copy of the whole page (for crawlers/AI bots that don't run JS)
+  - emits `dist/sitemap.xml` (lastmod = build date) and `dist/llms.txt` (markdown profile for AI assistants)
+- `public/robots.txt` points to the sitemap.
+- GA4 events: `page_view` on load, `generate_lead` (form success), `resume_download` (with `location`), `outbound_click` (GitHub/LinkedIn/email/project links).
 
 ## Build & deploy
 
-- `vite.config.js` splits vendors into `three-vendor`, `gsap-vendor`, `react-vendor` chunks. (`react-vendor` comes out empty; see KNOWN_ISSUES.)
-- `three-vendor` is about 1.08 MB min / 299 kB gzip and is loaded eagerly.
-- CI: `.github/workflows/deploy.yml`, push to `main` → build with secrets → GitHub Pages. Custom domain via `public/CNAME`.
+- Initial JS is about 370 kB min / 126 kB gzip (`index` + `gsap-vendor`). The lazy `HeroCanvas` chunk (three.js) is about 880 kB / 238 kB gzip. `chunkSizeWarningLimit` is raised to 1000 kB for it.
+- CI: `.github/workflows/deploy.yml`. PRs → lint + build. Push to `main` → lint + build + deploy to GitHub Pages. Custom domain via `public/CNAME`.

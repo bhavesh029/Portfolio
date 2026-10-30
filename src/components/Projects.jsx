@@ -1,10 +1,13 @@
 import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { projects } from "../constants";
+import { projects, socialLinks } from "../constants";
+import { trackOutboundClick } from "../utils/analytics";
 import GlassCard from "./ui/GlassCard";
 
 gsap.registerPlugin(ScrollTrigger);
+
+const githubUrl = socialLinks.find((link) => link.icon === "github")?.url;
 
 const colorMap = {
   amber: {
@@ -56,9 +59,10 @@ const Projects = () => {
             <h2 className="section-title mb-0">Selected Projects</h2>
           </div>
           <a
-            href="https://github.com/bhavesh029"
+            href={githubUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackOutboundClick("github_profile", githubUrl)}
             className="text-electric font-semibold hover:text-electric-300 flex items-center gap-1 group transition-colors"
           >
             View GitHub
@@ -128,25 +132,32 @@ const Projects = () => {
                     ))}
                   </div>
 
-                  {/* Link */}
+                  {/* Link (private/client projects have none) */}
                   <div className="pt-4 border-t border-glass-border mt-auto">
-                    <a
-                      href={project.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-electric text-sm font-medium hover:text-electric-300 flex items-center gap-1 group transition-colors"
-                      aria-label={`View ${project.title} on GitHub`}
-                    >
-                      View Project
-                      <svg
-                        className="w-4 h-4 transform group-hover:translate-x-1 transition-transform"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    {project.link ? (
+                      <a
+                        href={project.link}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => trackOutboundClick(`project_${project.id}`, project.link)}
+                        className="text-electric text-sm font-medium hover:text-electric-300 flex items-center gap-1 group transition-colors"
+                        aria-label={`View ${project.title} on GitHub`}
                       >
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
+                        View Project
+                        <svg
+                          className="w-4 h-4 transform group-hover:translate-x-1 transition-transform"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                      </a>
+                    ) : (
+                      <span className="text-gray-500 text-sm font-mono">
+                        Private codebase · details on request
+                      </span>
+                    )}
                   </div>
                 </GlassCard>
               </div>
