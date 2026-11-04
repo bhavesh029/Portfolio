@@ -36,7 +36,7 @@ const Toast = ({ message, type = "success", isVisible, onClose }) => {
 
   return (
     <div
-      className={`fixed top-6 right-6 z-[100] flex items-center gap-3 px-5 py-4 rounded-xl border backdrop-blur-md animate-fade-in ${styles[type]}`}
+      className={`fixed top-[calc(env(safe-area-inset-top)+1.5rem)] right-4 left-4 sm:left-auto sm:right-6 z-[100] flex items-center gap-3 px-5 py-4 rounded-xl border backdrop-blur-md animate-fade-in ${styles[type]}`}
     >
       {icons[type]}
       <p className="text-sm font-medium">{message}</p>

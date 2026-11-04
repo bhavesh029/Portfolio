@@ -2,7 +2,7 @@
 
 Personal portfolio site for **Bhavesh Chauhan, Senior Software Engineer (Backend & Distributed Systems)**, live at **https://bhaveshchauhan.me**.
 
-It is a single-page React app with a 3D hero (Three.js via React Three Fiber), GSAP scroll animations, a dark "space + glass" visual theme, and a working contact form (EmailJS). Its job is to present Bhavesh's experience, projects, skills and freelance services, and to turn visitors into leads (contact form, resume download).
+It is a single-page React app with a 3D hero (Three.js via React Three Fiber), GSAP scroll animations, a dark "space + glass" visual theme, and a working contact form (EmailJS). It is also an installable **Progressive Web App (PWA)**: visitors can install it to their home screen or desktop and it works offline. Its job is to present Bhavesh's experience, projects, skills and freelance services, and to turn visitors into leads (contact form, resume download).
 
 > **Working on this repo with an AI agent?** Read [`CLAUDE.md`](./CLAUDE.md) first, then the files in [`docs/`](./docs).
 
@@ -20,6 +20,7 @@ It is a single-page React app with a 3D hero (Three.js via React Three Fiber), G
 | Contact form | `@emailjs/browser` (sends email straight from the browser, no backend) |
 | Analytics | `react-ga4` (Google Analytics 4) via `src/utils/analytics.js` |
 | SEO | Static meta in `index.html` + build-time plugin `vite-plugins/seo.js` (JSON-LD, noscript copy, sitemap, llms.txt) |
+| PWA | `vite-plugin-pwa` (Workbox): manifest, service worker, offline precache |
 | Hosting | GitHub Pages, custom domain via `public/CNAME` |
 
 ## Page sections (top to bottom)
@@ -75,9 +76,16 @@ Locally they come from `.env` (gitignored). In CI they come from **GitHub reposi
 - **Pull requests to `main`:** `npm ci --legacy-peer-deps` → `npm run lint` → `npm run build` (checks only, no deploy).
 - **Push to `main`:** same steps, then upload `dist/` → deploy to GitHub Pages.
 
-Anything in `public/` (resume PDF, favicon, touch icon, social preview image, `robots.txt`, `site.webmanifest`, `CNAME`) is copied as-is to the site root. `sitemap.xml` and `llms.txt` are generated at build time.
+Anything in `public/` (resume PDF, favicon, app icons, social preview image, `robots.txt`, `CNAME`) is copied as-is to the site root. `sitemap.xml`, `llms.txt`, `manifest.webmanifest` and `sw.js` are generated at build time.
 
 Feature branches are **not** deployed. Merge to `main` to publish.
+
+### PWA (installable app)
+- Config lives in the `VitePWA({...})` block of `vite.config.js`. The build generates `manifest.webmanifest`, `sw.js` and `registerSW.js`. The service worker is **not** active in `npm run dev`; test with `npm run build && npm run preview`.
+- Updates: `registerType: 'autoUpdate'`. After a deploy, a returning visitor gets the new version on their next page load.
+- **Emergency kill switch:** set `selfDestroying: true` in the `VitePWA` options and deploy. Every visitor's service worker unregisters itself.
+- Icons are rendered from `scripts/app-icon.html`. Run `bash scripts/render-app-icons.sh` after changing the logo.
+- Install UI: the "Install app" button (Chrome/Edge/Android) and the iOS "Add to Home Screen" hint come from `src/hooks/useInstallPrompt.js`.
 
 ### Social preview image
 `public/social-preview.jpg` (1200×630) is rendered from `scripts/social-card.html`. After changing your title/photo, edit that HTML and run `bash scripts/render-social-card.sh` (needs Google Chrome, macOS).
@@ -91,14 +99,15 @@ Feature branches are **not** deployed. Merge to `main` to publish.
 ├── public/                        # Static files served at site root
 │   ├── Bhavesh_Chauhan_Resume_2026.pdf
 │   ├── CNAME                      # bhaveshchauhan.me
-│   ├── favicon.svg  apple-touch-icon.png  site.webmanifest  robots.txt
+│   ├── favicon.svg  apple-touch-icon.png  pwa-*.png  robots.txt
 │   └── social-preview.jpg         # og:image / twitter:image (1200×630)
-├── scripts/                       # social-card.html + render-social-card.sh
+├── scripts/                       # Social card + app icon sources and render scripts
 ├── vite-plugins/seo.js            # Build-time JSON-LD, <noscript> copy, sitemap.xml, llms.txt
 ├── src/
 │   ├── main.jsx                   # React root, GSAP plugin registration
 │   ├── App.jsx                    # Page composition, GA init
 │   ├── utils/analytics.js         # GA4 init + event helpers (no-op without GA ID)
+│   ├── hooks/useInstallPrompt.js  # PWA install state (Chromium prompt, iOS hint, installed)
 │   ├── index.css                  # Tailwind layers + shared component classes
 │   ├── constants/index.js         # ALL site content (single source of truth)
 │   ├── assets/images/your-photo.jpg
@@ -111,7 +120,7 @@ Feature branches are **not** deployed. Merge to `main` to publish.
 │           ├── GlassCard.jsx  Toast.jsx
 ├── index.html                     # Static SEO/OG meta, fonts, icons
 ├── tailwind.config.js             # Design tokens (colors, fonts, shadows, animations)
-├── vite.config.js                 # SEO plugin, gsap vendor chunk
+├── vite.config.js                 # SEO plugin, PWA config, gsap vendor chunk
 └── eslint.config.js
 ```
 

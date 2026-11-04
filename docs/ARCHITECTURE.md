@@ -96,3 +96,22 @@ useEffect(() => {
 
 - Initial JS is about 370 kB min / 126 kB gzip (`index` + `gsap-vendor`). The lazy `HeroCanvas` chunk (three.js) is about 880 kB / 238 kB gzip. `chunkSizeWarningLimit` is raised to 1000 kB for it.
 - CI: `.github/workflows/deploy.yml`. PRs → lint + build. Push to `main` → lint + build + deploy to GitHub Pages. Custom domain via `public/CNAME`.
+
+## PWA (installable app + offline)
+
+Configured by `VitePWA` in `vite.config.js` (`vite-plugin-pwa`, Workbox `generateSW`).
+
+- **Manifest:** generated as `/manifest.webmanifest` (name, `display: standalone`, theme `#050816`, 192/512/maskable icons, "Hire me" and "Resume" shortcuts). The plugin injects the `<link rel="manifest">`. There's no hand-written manifest.
+- **Service worker:** `/sw.js`, registered by the injected `/registerSW.js` (deferred). It precaches JS, CSS, HTML, the photo, icons and the resume PDF (about 1.7 MB, `social-preview.jpg` excluded), so the whole site, including the 3D hero, works offline. Google Fonts are cached at runtime.
+- **Updates:** `autoUpdate` + `skipWaiting` + `clientsClaim`. A new deploy activates on the visitor's next load. `cleanupOutdatedCaches` removes old precaches.
+- **`navigateFallback: null` on purpose.** "/" is served from the precache directly. A SPA fallback would answer `/llms.txt`, `/sitemap.xml` and `/robots.txt` navigations with `index.html`. Don't re-enable it unless routes are added, and if you do, add a denylist for those files.
+- **Kill switch:** `selfDestroying: true` → deploy → all clients unregister the SW.
+- **Dev:** the SW is disabled in `npm run dev`. Use `npm run build && npm run preview` to test. Unregister it afterwards (DevTools → Application) so it doesn't serve stale files on that port.
+- **Install UI:** `src/hooks/useInstallPrompt.js` captures `beforeinstallprompt` (Chromium) and exposes `canInstall`/`promptInstall`, detects iOS (no prompt API, so it shows an "Add to Home Screen" hint) and hides everything when already running standalone. It fires GA4 `pwa_install_prompt` (with `outcome`) and `pwa_installed`. Used in `Navbar.jsx` (desktop button, mobile icon, mobile-menu button/hint).
+- **Installed-app chrome:** `viewport-fit=cover` + `apple-mobile-web-app-*` meta in `index.html`. Safe-area insets are handled on the navbar (`pt-[env(safe-area-inset-top)]`), the mobile-menu close button, the toast, the footer (`safe-area-inset-bottom`) and body side padding.
+- **Offline contact form:** checks `navigator.onLine` and shows an "offline, email me" toast instead of attempting EmailJS.
+
+## Mobile conventions
+- Tap targets are at least 44 px tall (`min-h-[44px]` on text links). Form controls stay at 16 px font so iOS doesn't zoom on focus.
+- The hero uses `min-h-svh` (stable when mobile browser bars show/hide), not `min-h-screen`.
+- No horizontal overflow at 390 px. Check this after layout changes.
