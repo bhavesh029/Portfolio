@@ -2,20 +2,27 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import emailjs from "@emailjs/browser";
-import { personalInfo, socialLinks } from "../constants";
+import { personalInfo, projectTypes, socialLinks } from "../constants";
+import { trackEvent, trackOutboundClick, trackResumeDownload } from "../utils/analytics";
 import Toast from "./ui/Toast";
 
 gsap.registerPlugin(ScrollTrigger);
 
+const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+const AUTOREPLY_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID;
+const isEmailConfigured = Boolean(SERVICE_ID && TEMPLATE_ID && PUBLIC_KEY);
+
+if (!isEmailConfigured) {
+  console.warn("Contact form disabled: VITE_EMAILJS_* environment variables are missing.");
+}
+
+const emptyForm = { name: "", email: "", projectType: "", message: "", website: "" };
+
 const Contact = () => {
   const sectionRef = useRef(null);
-  const formRef = useRef();
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    projectType: "",
-    message: "",
-  });
+  const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState({ show: false, message: "", type: "success" });
 
@@ -43,52 +50,66 @@ const Contact = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm({ ...form, [name]: value });
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleCloseToast = useCallback(() => {
     setToast({ show: false, message: "", type: "success" });
   }, []);
 
-  const handleSubmit = (e) => {
+  const showToast = (message, type) => setToast({ show: true, message, type });
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Honeypot: real visitors never see or fill the "website" field
+    if (form.website) {
+      setForm(emptyForm);
+      showToast("Thanks! I'll get back to you within 24 hours.", "success");
+      return;
+    }
+
+    if (!isEmailConfigured) {
+      showToast(`The form is temporarily unavailable. Please email me at ${personalInfo.email}.`, "error");
+      return;
+    }
+
     setLoading(true);
 
     const templateParams = {
-      name: form.name,
-      email: form.email,
+      name: form.name.trim(),
+      email: form.email.trim(),
       project_type: form.projectType,
-      message: form.message,
+      message: form.message.trim(),
     };
 
-    emailjs
-      .send(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID,
-        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
-        templateParams,
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-      )
-      .then(() => {
-        if (import.meta.env.VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID) {
-          return emailjs.send(
-            import.meta.env.VITE_EMAILJS_SERVICE_ID,
-            import.meta.env.VITE_EMAILJS_AUTOREPLY_TEMPLATE_ID,
-            { ...templateParams, to_name: form.name, to_email: form.email },
-            import.meta.env.VITE_EMAILJS_PUBLIC_KEY
-          );
-        }
-        return Promise.resolve();
-      })
-      .then(() => {
-        setLoading(false);
-        setToast({ show: true, message: "Thanks! I'll get back to you within 24 hours.", type: "success" });
-        setForm({ name: "", email: "", projectType: "", message: "" });
-      })
-      .catch((error) => {
-        setLoading(false);
-        console.error("EmailJS Error:", error);
-        setToast({ show: true, message: "Something went wrong. Please try again.", type: "error" });
-      });
+    try {
+      await emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams, PUBLIC_KEY);
+    } catch (error) {
+      console.error("EmailJS Error:", error);
+      setLoading(false);
+      showToast(`Something went wrong. Please try again or email ${personalInfo.email}.`, "error");
+      return;
+    }
+
+    // The inquiry was delivered; an auto-reply failure must not make the visitor resubmit
+    if (AUTOREPLY_TEMPLATE_ID) {
+      try {
+        await emailjs.send(
+          SERVICE_ID,
+          AUTOREPLY_TEMPLATE_ID,
+          { ...templateParams, to_name: templateParams.name, to_email: templateParams.email },
+          PUBLIC_KEY
+        );
+      } catch (error) {
+        console.error("EmailJS auto-reply error:", error);
+      }
+    }
+
+    trackEvent("generate_lead", { project_type: form.projectType });
+    setLoading(false);
+    setForm(emptyForm);
+    showToast("Thanks! I'll get back to you within 24 hours.", "success");
   };
 
   const socialIcons = {
@@ -124,13 +145,28 @@ const Contact = () => {
           <span className="section-subtitle">Get in Touch</span>
           <h2 className="section-title">Let's Work Together</h2>
           <p className="text-gray-400 text-lg">
-            Ready to build scalable solutions? Let's discuss your project requirements.
+            Need a freelance backend engineer, or hiring for a senior role? Tell me what
+            you're building. I reply within 24 hours.
           </p>
         </div>
 
         {/* Form Card */}
         <div className="contact-anim glass-card p-8 md:p-10">
-          <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Honeypot field for bots, hidden from people and screen readers */}
+            <div className="hidden" aria-hidden="true">
+              <label htmlFor="contact-website">Website</label>
+              <input
+                type="text"
+                id="contact-website"
+                name="website"
+                value={form.website}
+                onChange={handleChange}
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
+
             {/* Name & Email */}
             <div className="grid md:grid-cols-2 gap-6">
               <div>
@@ -144,6 +180,8 @@ const Contact = () => {
                   value={form.name}
                   onChange={handleChange}
                   placeholder="Your full name"
+                  autoComplete="name"
+                  maxLength={100}
                   className="form-input"
                   required
                 />
@@ -159,6 +197,8 @@ const Contact = () => {
                   value={form.email}
                   onChange={handleChange}
                   placeholder="your@company.com"
+                  autoComplete="email"
+                  maxLength={150}
                   className="form-input"
                   required
                 />
@@ -179,13 +219,11 @@ const Contact = () => {
                 required
               >
                 <option value="">Select project type</option>
-                <option value="backend">Backend Development</option>
-                <option value="api">API Development</option>
-                <option value="microservices">Microservices Architecture</option>
-                <option value="cloud">Cloud Migration / Optimization</option>
-                <option value="ai">AI Integration</option>
-                <option value="fullstack">Full-Stack Application</option>
-                <option value="consulting">Technical Consulting</option>
+                {projectTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -200,7 +238,9 @@ const Contact = () => {
                 name="message"
                 value={form.message}
                 onChange={handleChange}
-                placeholder="Tell me about your project requirements..."
+                placeholder="Tell me about your project, timeline and budget..."
+                minLength={20}
+                maxLength={5000}
                 className="form-input resize-none"
                 required
               />
@@ -235,6 +275,7 @@ const Contact = () => {
               href={link.url}
               target={link.icon !== "email" ? "_blank" : undefined}
               rel={link.icon !== "email" ? "noopener noreferrer" : undefined}
+              onClick={() => trackOutboundClick(link.icon, link.url)}
               className="flex items-center gap-2 text-gray-400 hover:text-electric transition-colors duration-300"
               aria-label={link.name}
             >
@@ -246,6 +287,7 @@ const Contact = () => {
             href={personalInfo.resumeUrl}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackResumeDownload("contact")}
             className="flex items-center gap-2 text-amber hover:text-amber-300 transition-colors duration-300"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

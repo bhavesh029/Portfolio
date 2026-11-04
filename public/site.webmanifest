@@ -1,0 +1,12 @@
+{
+  "name": "Bhavesh Chauhan | Senior Software Engineer",
+  "short_name": "Bhavesh C.",
+  "start_url": "/",
+  "display": "browser",
+  "background_color": "#050816",
+  "theme_color": "#050816",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml" },
+    { "src": "/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" }
+  ]
+}

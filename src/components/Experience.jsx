@@ -75,7 +75,7 @@ const Experience = () => {
             {experiences.map((exp) => (
               <div key={exp.id} className="exp-card relative pl-12 md:pl-20">
                 {/* Timeline Dot */}
-                <div className="absolute left-2.5 md:left-6.5 top-2 timeline-dot" />
+                <div className="absolute left-[9px] md:left-[25px] top-2 timeline-dot" />
 
                 {/* Card */}
                 <div className="glass-card p-6 md:p-8">
@@ -99,7 +99,7 @@ const Experience = () => {
                   <p className="text-gray-400 text-sm mb-4">{exp.description}</p>
 
                   <ul className="space-y-2 mb-5">
-                    {exp.bullets.slice(0, 3).map((bullet, i) => (
+                    {exp.bullets.map((bullet, i) => (
                       <li
                         key={i}
                         className="flex items-start gap-2 text-sm text-gray-300"
@@ -127,7 +127,7 @@ const Experience = () => {
 
             {/* Education */}
             <div className="exp-card relative pl-12 md:pl-20">
-              <div className="absolute left-2.5 md:left-6.5 top-2 w-4 h-4 rounded-full bg-amber border-4 border-space-900" style={{ boxShadow: '0 0 15px rgba(245,166,35,0.5)' }} />
+              <div className="absolute left-[9px] md:left-[25px] top-2 w-4 h-4 rounded-full bg-amber border-4 border-space-900" style={{ boxShadow: '0 0 15px rgba(245,166,35,0.5)' }} />
               <div className="glass-card p-6 md:p-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
                   <div>

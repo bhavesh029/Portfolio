@@ -1,7 +1,10 @@
-import { useEffect, useRef } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 import gsap from "gsap";
-import HeroCanvas from "./canvas/HeroCanvas";
 import { personalInfo } from "../constants";
+import { trackResumeDownload } from "../utils/analytics";
+
+// three.js is ~1 MB, so load it after the page content is interactive
+const HeroCanvas = lazy(() => import("./canvas/HeroCanvas"));
 
 const Hero = () => {
   const heroRef = useRef(null);
@@ -56,7 +59,9 @@ const Hero = () => {
       id="home"
     >
       {/* 3D Canvas Background */}
-      <HeroCanvas />
+      <Suspense fallback={null}>
+        <HeroCanvas />
+      </Suspense>
 
       {/* Content */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-8 w-full">
@@ -68,27 +73,28 @@ const Hero = () => {
           >
             <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
             <span className="text-sm font-medium text-electric">
-              {personalInfo.title} · {personalInfo.subtitle}
+              {personalInfo.availability}
             </span>
           </div>
 
           {/* Name */}
-          <div ref={nameRef} className="mb-6">
-            <h1 className="name-line font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-white leading-[1.1] tracking-tight">
-              BHAVESH
-            </h1>
-            <h1 className="name-line font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold leading-[1.1] tracking-tight text-gradient-mixed">
-              CHAUHAN
-            </h1>
-          </div>
-
-          {/* Tagline */}
-          <p
-            ref={taglineRef}
-            className="text-lg md:text-xl text-gray-400 mb-10 max-w-2xl leading-relaxed"
+          <h1
+            ref={nameRef}
+            className="mb-6 font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-bold text-white leading-[1.1] tracking-tight"
           >
-            {personalInfo.tagline}
-          </p>
+            <span className="name-line block">BHAVESH</span>
+            <span className="name-line block text-gradient-mixed">CHAUHAN</span>
+          </h1>
+
+          {/* Title + Tagline */}
+          <div ref={taglineRef} className="mb-10">
+            <p className="text-xl md:text-2xl font-display font-semibold text-white mb-4">
+              {personalInfo.title} · {personalInfo.subtitle}
+            </p>
+            <p className="text-lg md:text-xl text-gray-400 max-w-2xl leading-relaxed">
+              {personalInfo.tagline}
+            </p>
+          </div>
 
           {/* CTAs */}
           <div ref={ctaRef} className="flex flex-wrap gap-4 mb-16">
@@ -100,6 +106,7 @@ const Hero = () => {
               target="_blank"
               rel="noopener noreferrer"
               className="btn-outline"
+              onClick={() => trackResumeDownload("hero")}
             >
               View Resume
             </a>

@@ -16,12 +16,21 @@ export const personalInfo = {
   tagline: "Building cloud-native microservices, event-driven systems & AI-powered platforms",
   email: "chouhanbhavesh9@gmail.com",
   location: "India · Remote-Ready",
+  siteUrl: "https://bhaveshchauhan.me",
   resumeUrl: "/Bhavesh_Chauhan_Resume_2026.pdf",
   yearsOfExperience: "4+",
   companiesWorked: "4",
   usersServed: "3,000+",
   teamSize: "4",
+  availability: "Available for freelance & contract work",
 };
+
+export const aboutStats = [
+  { value: "25%", label: "Cloud Cost Reduction" },
+  { value: "35%", label: "Query Performance Boost" },
+  { value: "3,000+", label: "Students Served" },
+  { value: "50+", label: "Reports Shipped in 18 Days" },
+];
 
 export const socialLinks = [
   { name: "GitHub", url: "https://github.com/bhavesh029", icon: "github" },
@@ -117,7 +126,7 @@ export const projects = [
       "Production-grade CI/CD, structured logging, and full API documentation",
     ],
     tech: ["NestJS", "React 19", "Supabase", "pgvector", "Gemini 2.5"],
-    link: "https://github.com/bhavesh029",
+    link: null,
     color: "amber",
   },
   {
@@ -133,7 +142,7 @@ export const projects = [
       "Generalized report utility cutting generation time by 20%",
     ],
     tech: ["React", "Node.js", "AWS Lambda", "PostgreSQL"],
-    link: "https://github.com/bhavesh029",
+    link: null,
     color: "blue",
   },
   {
@@ -146,7 +155,7 @@ export const projects = [
     highlights: [
       "Real-time AI classification engine",
       "Two-way number masking for user privacy",
-      "35% improvement in query performance with PostGIS",
+      "Secure phone-based authentication",
     ],
     tech: ["Node.js", "AI Integration", "Redis", "AWS", "PostgreSQL"],
     link: "https://github.com/bhavesh029/Truecaller-backend",
@@ -209,4 +218,14 @@ export const services = [
     icon: "cpu",
     tags: ["Gemini 2.5", "RAG Pipelines", "PDF Extraction", "LLM Integration"],
   },
+];
+
+export const projectTypes = [
+  { value: "backend", label: "Backend Development" },
+  { value: "api", label: "API Development" },
+  { value: "microservices", label: "Microservices Architecture" },
+  { value: "cloud", label: "Cloud Migration / Optimization" },
+  { value: "ai", label: "AI Integration" },
+  { value: "fullstack", label: "Full-Stack Application" },
+  { value: "consulting", label: "Technical Consulting" },
 ];

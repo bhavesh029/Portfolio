@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import profilePic from "../assets/images/your-photo.jpg";
+import { aboutStats, personalInfo } from "../constants";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -30,13 +31,6 @@ const About = () => {
     return () => ctx.revert();
   }, []);
 
-  const stats = [
-    { value: "25%", label: "Cloud Cost Reduction" },
-    { value: "35%", label: "Query Performance Boost" },
-    { value: "3,000+", label: "Students Served" },
-    { value: "50+", label: "Reports Shipped in 18 Days" },
-  ];
-
   return (
     <section ref={sectionRef} id="about" className="relative py-20 md:py-28">
       <div className="max-w-7xl mx-auto px-6 lg:px-8">
@@ -47,7 +41,11 @@ const About = () => {
               {/* Profile Image */}
               <img
                 src={profilePic}
-                alt="Bhavesh Chauhan"
+                alt={`${personalInfo.name}, ${personalInfo.title}`}
+                width="448"
+                height="448"
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
                 onError={(e) => {
                   e.target.src =
@@ -67,8 +65,8 @@ const About = () => {
                     </svg>
                   </div>
                   <div>
-                    <div className="text-sm font-semibold text-white">Open to Work</div>
-                    <div className="text-xs text-gray-400">Remote-Ready · India</div>
+                    <div className="text-sm font-semibold text-white">Open to Freelance & Full-time</div>
+                    <div className="text-xs text-gray-400">{personalInfo.location}</div>
                   </div>
                 </div>
               </div>
@@ -105,7 +103,7 @@ const About = () => {
 
             {/* Stats Grid */}
             <div className="about-anim grid grid-cols-2 gap-4">
-              {stats.map((stat) => (
+              {aboutStats.map((stat) => (
                 <div
                   key={stat.label}
                   className="glass-card p-4 text-center hover:border-electric/30 transition-all"
